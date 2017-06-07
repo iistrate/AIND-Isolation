@@ -42,14 +42,10 @@ def custom_score(game, player):
         return -float('inf')
 
     open_move = float(len(game.get_legal_moves(player)))
-    # heuristic = float(len(game.get_legal_moves(player))) - 2 * float(
-    #     len(game.get_legal_moves(game.get_opponent(player))))
-    # print(player.__class__.__name__)
-    # print(heuristic)
-    # if player.search_depth ==3:
-    #     print(player.__class__.__name__)
-    #    print(player.search_depth)
-    return open_move
+    improved_score = float(len(game.get_legal_moves(player))) - 2 * float(len(game.get_legal_moves(game.get_opponent(player))))
+
+    heuristic = open_move
+    return heuristic
 
 
 def custom_score_2(game, player):
@@ -131,7 +127,7 @@ class IsolationPlayer:
         self.score = score_fn
         self.time_left = None
         self.TIMER_THRESHOLD = timeout
-
+        self.moves = []
 
 class MinimaxPlayer(IsolationPlayer):
     """Game-playing agent that chooses a move using depth-limited minimax
@@ -178,9 +174,6 @@ class MinimaxPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        legal_moves = game.get_legal_moves()
-        best_move = next(iter(legal_moves or []), (-1, -1))
-
         # always choose center if first move
         # if game.move_count == 0:
         #     return (
@@ -193,12 +186,57 @@ class MinimaxPlayer(IsolationPlayer):
             best_move = self.minimax(game, self.search_depth)
 
         except SearchTimeout:
+            best_move = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
+            self.moves = []
             print('Timed out brotato chip.')
-            print(legal_moves)
-            print(best_move)
 
         # Return the best move from the last completed search iteration
         return best_move
+
+    def max_value(self, state, depth):
+            """
+            Evaluates board positions and returns the utility of the move
+            :param state: isolation.Board
+            :param depth: depth
+            :return: float
+            """
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            legal_moves = state.get_legal_moves(self)
+            if not legal_moves:
+                return state.utility(player=self)
+            elif depth <= 0:
+                return self.score(state, self)
+
+            val = -float("inf")
+            for move in legal_moves:
+                val = max(val, self.min_value(state.forecast_move(move), depth=depth-1))
+            return val
+
+    def min_value(self, state, depth):
+            """
+            Evaluates board positions and returns the utility of the move
+            :param state: isolation.Board
+            :param depth: depth
+            :return: float
+            """
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            min_player = state.active_player
+            legal_moves = state.get_legal_moves(player=min_player)
+
+            if not legal_moves:
+                return state.utility(player=min_player)
+            elif depth <= 0:
+                return self.score(state, self)
+
+            val = float("inf")
+            for move in legal_moves:
+                val = min(val, self.max_value(state.forecast_move(move), depth=depth-1))
+            return val
+
 
     def minimax(self, game, depth):
         """Implement depth-limited minimax search algorithm as described in
@@ -242,57 +280,15 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        def max_value(state, depth):
-            """
-            Evaluates board positions and returns the utility of the move
-            :param state: isolation.Board
-            :param depth: depth
-            :return: float
-            """
-            if self.time_left() < self.TIMER_THRESHOLD:
-                raise SearchTimeout()
-
-            legal_moves = state.get_legal_moves(self)
-            if not legal_moves:
-                return state.utility(player=self)
-            elif depth == 0:
-                return self.score(game=state, player=self)
-
-            val = -float("inf")
-            for move in legal_moves:
-                val = max(val, min_value(state.forecast_move(move), depth=depth-1))
-            return val
-
-        def min_value(state, depth):
-            """
-            Evaluates board positions and returns the utility of the move
-            :param state: isolation.Board
-            :param depth: depth
-            :return: float
-            """
-            if self.time_left() < self.TIMER_THRESHOLD:
-                raise SearchTimeout()
-
-            min_player = state.get_opponent(self)
-            legal_moves = state.get_legal_moves(player=min_player)
-
-            if not legal_moves:
-                return state.utility(player=min_player)
-            elif depth == 0:
-                return self.score(game=state, player=min_player)
-
-            val = float("inf")
-            for move in legal_moves:
-                val = min(val, max_value(state.forecast_move(move), depth=depth-1))
-            return val
-
+        self.moves = []
         legal_moves = game.get_legal_moves()
-        result = max(
-            [(min_value(game.forecast_move(move), depth=depth), move) for move in legal_moves],
-            default=[-float('inf'), (-1, -1)]
-        )[1]
-        print(result)
-        return result
+        for move in legal_moves:
+            move, score = (self.min_value(game.forecast_move(move), depth=depth-1), move)
+            self.moves.append(
+                (move, score)
+            )
+        chosen = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
+        return chosen
 
 
 class AlphaBetaPlayer(IsolationPlayer):
