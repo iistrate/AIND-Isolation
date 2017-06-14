@@ -42,10 +42,8 @@ def custom_score(game, player):
         return -float('inf')
 
     open_move = float(len(game.get_legal_moves(player)))
-    improved_score = float(len(game.get_legal_moves(player))) - 2 * float(len(game.get_legal_moves(game.get_opponent(player))))
 
-    heuristic = open_move
-    return heuristic
+    return open_move
 
 
 def custom_score_2(game, player):
@@ -70,9 +68,13 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_winner(player):
+        return float('inf')
+    if game.is_loser(player):
+        return -float('inf')
 
+    improved_score = float(len(game.get_legal_moves(player))) - 2 * float(len(game.get_legal_moves(game.get_opponent(player))))
+    return improved_score
 
 def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -96,8 +98,13 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_winner(player):
+        return float('inf')
+    if game.is_loser(player):
+        return -float('inf')
+
+    improved_score = float(len(game.get_legal_moves(player))) -  float(len(game.get_legal_moves(game.get_opponent(player))))
+    return improved_score
 
 
 class IsolationPlayer:
@@ -175,10 +182,10 @@ class MinimaxPlayer(IsolationPlayer):
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
         # always choose center if first move
-        # if game.move_count == 0:
-        #     return (
-        #         game.width // 2, game.height // 2
-        #     )
+        if game.move_count == 0:
+            return (
+                game.width // 2, game.height // 2
+            )
 
         try:
             # The try/except block will automatically catch the exception
@@ -329,8 +336,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        return self.alphabeta(game=game, depth=self.search_depth)
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -380,5 +386,4 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        return game.get_legal_moves(self)[0]
