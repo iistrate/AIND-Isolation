@@ -336,7 +336,77 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-        return self.alphabeta(game=game, depth=self.search_depth)
+        # Initialize the best move so that this function returns something
+        # in case the search fails due to timeout
+        # always choose center if first move
+        if game.move_count == 0:
+            return (
+                game.width // 2, game.height // 2
+            )
+
+        try:
+            # The try/except block will automatically catch the exception
+            # raised when the timer is about to expire.
+            best_move = self.alphabeta(game=game, depth=self.search_depth, alpha=float("-inf"), beta=float("inf"))
+
+        except SearchTimeout:
+            best_move = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
+            self.moves = []
+            print('Timed out guapanchita')
+
+        # Return the best move from the last completed search iteration
+        return best_move
+
+    def max_value(self, state, depth, alpha, beta):
+            """
+            Evaluates board positions and returns the utility of the move
+            :param state: isolation.Board
+            :param depth: depth
+            :return: float
+            """
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            legal_moves = state.get_legal_moves(self)
+            if not legal_moves:
+                return state.utility(player=self)
+            elif depth <= 0:
+                return self.score(state, self)
+
+            val = -float("inf")
+            for move in legal_moves:
+                val = max(val, self.min_value(state=state.forecast_move(move), depth=depth-1, alpha=alpha, beta=beta))
+                if val >= beta:
+                    return val
+                alpha = max(alpha, val)
+            return val
+
+    def min_value(self, state, depth, alpha, beta):
+            """
+            Evaluates board positions and returns the utility of the move
+            :param state: isolation.Board
+            :param depth: depth
+            :return: float
+            """
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()
+
+            min_player = state.active_player
+            legal_moves = state.get_legal_moves(player=min_player)
+
+            if not legal_moves:
+                return state.utility(player=min_player)
+            elif depth <= 0:
+                return self.score(state, self)
+
+            val = float("inf")
+            for move in legal_moves:
+                val = min(val, self.max_value(state=state.forecast_move(move), depth=depth-1, alpha=alpha, beta=beta))
+                if val <= alpha:
+                    return val
+                beta = min(beta, val)
+            return val
+
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -386,4 +456,12 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        return game.get_legal_moves(self)[0]
+        self.moves = []
+        legal_moves = game.get_legal_moves()
+        for move in legal_moves:
+            move, score = (self.min_value(state=game.forecast_move(move), depth=depth-1, alpha=alpha, beta=beta), move)
+            self.moves.append(
+                (move, score)
+            )
+        chosen = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
+        return chosen
