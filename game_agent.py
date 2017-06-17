@@ -290,9 +290,9 @@ class MinimaxPlayer(IsolationPlayer):
         self.moves = []
         legal_moves = game.get_legal_moves()
         for move in legal_moves:
-            move, score = (self.min_value(game.forecast_move(move), depth=depth-1), move)
+            score, move = (self.min_value(game.forecast_move(move), depth=depth-1), move)
             self.moves.append(
-                (move, score)
+                (score, move)
             )
         chosen = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
         return chosen
@@ -303,6 +303,9 @@ class AlphaBetaPlayer(IsolationPlayer):
     search with alpha-beta pruning. You must finish and test this player to
     make sure it returns a good move before the search time limit expires.
     """
+
+    def __repr__(self):
+        return "AlphaBetaPlayer"
 
     def get_move(self, game, time_left):
         """Search for the best move from the available legal moves and return a
@@ -335,7 +338,6 @@ class AlphaBetaPlayer(IsolationPlayer):
             (-1, -1) if there are no available legal moves.
         """
         self.time_left = time_left
-
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
         # always choose center if first move
@@ -347,7 +349,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            best_move = self.alphabeta(game=game, depth=self.search_depth, alpha=float("-inf"), beta=float("inf"))
+            best_move = self.alphabeta(game=game, depth=self.search_depth, alpha=-float("inf"), beta=float("inf"))
 
         except SearchTimeout:
             best_move = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
@@ -367,10 +369,10 @@ class AlphaBetaPlayer(IsolationPlayer):
             if self.time_left() < self.TIMER_THRESHOLD:
                 raise SearchTimeout()
 
-            legal_moves = state.get_legal_moves(self)
+            legal_moves = state.get_legal_moves(player=self)
             if not legal_moves:
                 return state.utility(player=self)
-            elif depth <= 0:
+            if depth <= 0:
                 return self.score(state, self)
 
             val = -float("inf")
@@ -379,6 +381,7 @@ class AlphaBetaPlayer(IsolationPlayer):
                 if val >= beta:
                     return val
                 alpha = max(alpha, val)
+                # print(alpha)
             return val
 
     def min_value(self, state, depth, alpha, beta):
@@ -396,7 +399,7 @@ class AlphaBetaPlayer(IsolationPlayer):
 
             if not legal_moves:
                 return state.utility(player=min_player)
-            elif depth <= 0:
+            if depth <= 0:
                 return self.score(state, self)
 
             val = float("inf")
@@ -405,6 +408,7 @@ class AlphaBetaPlayer(IsolationPlayer):
                 if val <= alpha:
                     return val
                 beta = min(beta, val)
+                # print(beta)
             return val
 
 
@@ -456,12 +460,19 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
+        ##
+        ## Dear brotato, a few q: What happens at the end of a game w Pl 1? What move does he return
+        ## How do we speed up the search? Is there a better way of returning a move on search timeout?
+        ## Do we prune correctly?
+        ##
+
         self.moves = []
         legal_moves = game.get_legal_moves()
         for move in legal_moves:
-            move, score = (self.min_value(state=game.forecast_move(move), depth=depth-1, alpha=alpha, beta=beta), move)
+            score, move = (self.min_value(state=game.forecast_move(move), depth=depth-1, alpha=alpha, beta=beta), move)
+            alpha = max(score, alpha)
             self.moves.append(
-                (move, score)
+                (score, move)
             )
         chosen = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
         return chosen
