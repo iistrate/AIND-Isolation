@@ -266,7 +266,7 @@ class Board(object):
         """DEPRECATED - use Board.to_string()"""
         return self.to_string()
 
-    def to_string(self, symbols=['1', '2']):
+    def to_string(self, symbols=['M', 'G']):
         """Generate a string representation of the current game state, marking
         the location of each player and indicating which cells have been
         blocked, and which remain open.
@@ -316,8 +316,11 @@ class Board(object):
 
         time_millis = lambda: 1000 * timeit.default_timer()
 
+        print("#"*80)
+        print("Begin Map")
+        print(self.to_string())
+        print("#" * 80)
         while True:
-
             legal_player_moves = self.get_legal_moves()
             game_copy = self.copy()
 
@@ -334,9 +337,12 @@ class Board(object):
 
             if curr_move not in legal_player_moves:
                 if len(legal_player_moves) > 0:
+                    print(self.to_string())
                     return self._inactive_player, move_history, "forfeit"
                 return self._inactive_player, move_history, "illegal move"
 
             move_history.append(list(curr_move))
 
             self.apply_move(curr_move)
+            print(self.to_string())
+
