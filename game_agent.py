@@ -186,14 +186,13 @@ class MinimaxPlayer(IsolationPlayer):
             return (
                 game.width // 2, game.height // 2
             )
-
+        best_move = (-1, -1)
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
             best_move = self.minimax(game, self.search_depth)
 
         except SearchTimeout:
-            best_move = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
             self.moves = []
             print('Timed out brotato chip.')
 
@@ -340,20 +339,22 @@ class AlphaBetaPlayer(IsolationPlayer):
         self.time_left = time_left
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
+        if not game.get_legal_moves(): return (-1, -1)
+        best_move = (-1, -1)
         # always choose center if first move
         if game.move_count == 0:
             return (
                 game.width // 2, game.height // 2
             )
-
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            best_move = self.alphabeta(game=game, depth=self.search_depth, alpha=-float("inf"), beta=float("inf"))
+            self.search_depth = 0
+            while self.search_depth <= float('inf'):
+                best_move = self.alphabeta(game=game, depth=self.search_depth)
+                self.search_depth += 1
 
         except SearchTimeout:
-            best_move = max(self.moves, default=[-float('inf'), (-1, -1)])[1]
-            self.moves = []
             print('Timed out guapanchita')
 
         # Return the best move from the last completed search iteration
@@ -381,7 +382,6 @@ class AlphaBetaPlayer(IsolationPlayer):
                 if val >= beta:
                     return val
                 alpha = max(alpha, val)
-                # print(alpha)
             return val
 
     def min_value(self, state, depth, alpha, beta):
@@ -408,7 +408,6 @@ class AlphaBetaPlayer(IsolationPlayer):
                 if val <= alpha:
                     return val
                 beta = min(beta, val)
-                # print(beta)
             return val
 
 
@@ -459,12 +458,6 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
-
-        ##
-        ## Dear brotato, a few q: What happens at the end of a game w Pl 1? What move does he return
-        ## How do we speed up the search? Is there a better way of returning a move on search timeout?
-        ## Do we prune correctly?
-        ##
 
         self.moves = []
         legal_moves = game.get_legal_moves()
