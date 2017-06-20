@@ -316,10 +316,10 @@ class Board(object):
 
         time_millis = lambda: 1000 * timeit.default_timer()
 
-        print("#"*80)
-        print("Begin Map")
-        print(self.to_string())
-        print("#" * 80)
+        # print("#"*80)
+        # print("Begin Map")
+        # print(self.to_string())
+        # print("#" * 80)
         while True:
             legal_player_moves = self.get_legal_moves()
             game_copy = self.copy()
@@ -344,5 +344,5 @@ class Board(object):
             move_history.append(list(curr_move))
 
             self.apply_move(curr_move)
-            print(self.to_string())
+            # print(self.to_string())
 

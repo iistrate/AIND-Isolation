@@ -267,8 +267,8 @@ if __name__ == "__main__":
     # place player 1 on the board at row 2, column 3, then place player 2 on
     # the board at row 0, column 5; display the resulting board state.  Note
     # that the .apply_move() method changes the calling object in-place.
-    # game.apply_move((1, 1))
-    # game.apply_move((2, 2))
+    game.apply_move((randint(0, 6), randint(0, 6)))
+    game.apply_move((randint(0, 6), randint(0, 6)))
 
     print(game.to_string(symbols=['M', 'G']))
 

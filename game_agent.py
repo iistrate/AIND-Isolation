@@ -3,9 +3,7 @@ test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
 import random
-import numpy as np
-
-
+import math
 class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
     pass
@@ -36,14 +34,58 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
 
+    infinity = float("inf")
+
     if game.is_winner(player):
-        return float('inf')
+        return infinity
     if game.is_loser(player):
-        return -float('inf')
+        return -infinity
 
-    open_move = float(len(game.get_legal_moves(player)))
+    max_player = player
+    min_player = game.get_opponent(max_player)
+    max_player_location = game.get_player_location(max_player)
+    min_player_location = game.get_player_location(min_player)
 
-    return open_move
+    positions = (
+        (2, 1), (5, 4), (2, 5), (1, 4), (4, 1), (2, 5), (1, 2),
+    )
+    reflected = (
+        (4, 5), (1, 2), (4, 1), (5, 2), (2, 5), (4, 1), (5, 4)
+    )
+    avg_game_length = 14
+
+    max_reflection_ply = 2
+    score = 0.
+    center_move = (game.width//2, game.height//2)
+    # always choose center if it is available
+    if game.move_count in (0, 1, 2):
+        if max_player_location == center_move:
+            score = infinity
+        elif min_player_location == center_move:
+            score = -infinity
+    # elif game.move_count < max_reflection_ply and min_player_location in positions:
+    #     reflected_ind = positions.index(min_player_location)
+    #     if max_player_location == reflected[reflected_ind]:
+    #         score = infinity
+    #     # move to edge if player 1 occupies center
+    # elif game.move_count == 1 and max_player_location == center_move and min_player_location[0] == game.width - 1 or \
+    #                 min_player_location[1] == game.height - 1:
+    #     score = -infinity
+    # elif game.move_count == 1 and min_player_location == center_move and max_player_location[0] == game.width - 1 or \
+    #                 max_player_location[1] == game.height - 1:
+    #     score = infinity
+    # avoid edges in end game but favor in begin game
+    elif game.move_count < 0.25 * avg_game_length and max_player_location[0] == game.width-1 or max_player_location[1] == game.height-1:
+        score = infinity
+    elif game.move_count < 0.25 * avg_game_length and min_player_location[0] == game.width - 1 or min_player_location[1] == game.height - 1:
+        score = -infinity
+    # elif game.move_count > 0.25 * avg_game_length and max_player_location[0] == game.width-1 or max_player_location[1] == game.height-1:
+    #     score = -infinity
+    # elif game.move_count > 0.25 * avg_game_length and min_player_location[0] == game.width-1 or min_player_location[1] == game.height-1:
+    #     score = infinity
+    else:
+        score =  math.sqrt(len(game.get_legal_moves(min_player))) - len(game.get_legal_moves(max_player))
+    return float(score)
 
 
 def custom_score_2(game, player):
@@ -68,14 +110,58 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
+    infinity = float("inf")
+
     if game.is_winner(player):
-        return float('inf')
+        return infinity
     if game.is_loser(player):
-        return -float('inf')
+        return -infinity
 
-    improved_score = float(len(game.get_legal_moves(player))) - 2 * float(len(game.get_legal_moves(game.get_opponent(player))))
-    return improved_score
+    max_player = player
+    min_player = game.get_opponent(max_player)
+    max_player_location = game.get_player_location(max_player)
+    min_player_location = game.get_player_location(min_player)
 
+    positions = (
+        (2, 1), (5, 4), (2, 5), (1, 4), (4, 1), (2, 5), (1, 2),
+    )
+    reflected = (
+        (4, 5), (1, 2), (4, 1), (5, 2), (2, 5), (4, 1), (5, 4)
+    )
+    avg_game_length = 14
+
+    max_reflection_ply = 2
+    score = 0.
+    center_move = (game.width//2, game.height//2)
+    # always choose center if it is available
+    if game.move_count in (0, 1, 2):
+        if max_player_location == center_move:
+            score = infinity
+        elif min_player_location == center_move:
+            score = -infinity
+    elif game.move_count < max_reflection_ply and min_player_location in positions:
+        reflected_ind = positions.index(min_player_location)
+        if max_player_location == reflected[reflected_ind]:
+            score = infinity
+        # move to edge if player 1 occupies center
+    elif game.move_count == 1 and max_player_location == center_move and min_player_location[0] == game.width - 1 or \
+                    min_player_location[1] == game.height - 1:
+        score = -infinity
+    elif game.move_count == 1 and min_player_location == center_move and max_player_location[0] == game.width - 1 or \
+                    max_player_location[1] == game.height - 1:
+        score = infinity
+    # avoid edges in end game but favor in begin game
+    elif game.move_count < 0.15 * avg_game_length and max_player_location[0] == game.width-1 or max_player_location[1] == game.height-1:
+        score = infinity
+    elif game.move_count < 0.15 * avg_game_length and min_player_location[0] == game.width - 1 or min_player_location[1] == game.height - 1:
+        score = -infinity
+    elif game.move_count > 0.25 * avg_game_length and max_player_location[0] == game.width-1 or max_player_location[1] == game.height-1:
+        score = -infinity
+    elif game.move_count > 0.25 * avg_game_length and min_player_location[0] == game.width-1 or min_player_location[1] == game.height-1:
+        score = infinity
+    else:
+        score =  math.sqrt(len(game.get_legal_moves(min_player))) - len(game.get_legal_moves(max_player))
+    return float(score)
 def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -103,8 +189,8 @@ def custom_score_3(game, player):
     if game.is_loser(player):
         return -float('inf')
 
-    improved_score = float(len(game.get_legal_moves(player))) -  float(len(game.get_legal_moves(game.get_opponent(player))))
-    return improved_score
+    # used as a baseline
+    return math.sqrt(len(game.get_legal_moves(player))) - len(game.get_legal_moves(game.get_opponent(player)))
 
 
 class IsolationPlayer:
@@ -181,11 +267,6 @@ class MinimaxPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        # always choose center if first move
-        if game.move_count == 0:
-            return (
-                game.width // 2, game.height // 2
-            )
         best_move = (-1, -1)
         try:
             # The try/except block will automatically catch the exception
@@ -193,8 +274,7 @@ class MinimaxPlayer(IsolationPlayer):
             best_move = self.minimax(game, self.search_depth)
 
         except SearchTimeout:
-            self.moves = []
-            print('Timed out brotato chip.')
+            pass
 
         # Return the best move from the last completed search iteration
         return best_move
@@ -341,11 +421,6 @@ class AlphaBetaPlayer(IsolationPlayer):
         # in case the search fails due to timeout
         if not game.get_legal_moves(): return (-1, -1)
         best_move = (-1, -1)
-        # always choose center if first move
-        if game.move_count == 0:
-            return (
-                game.width // 2, game.height // 2
-            )
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
@@ -355,8 +430,9 @@ class AlphaBetaPlayer(IsolationPlayer):
                 self.search_depth += 1
 
         except SearchTimeout:
-            print('Timed out guapanchita')
+            pass
 
+        self.search_depth = 0
         # Return the best move from the last completed search iteration
         return best_move
 
